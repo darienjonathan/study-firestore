@@ -70,7 +70,11 @@ export const useChats = async () => {
 
   // edit chat message
   const editChatMessage = (chatId: string, message: string) => {
-    setDoc(doc(db, CHAT_COLLECTION_NAME, chatId), { message }, { merge: true });
+    setDoc(
+      doc(db, CHAT_COLLECTION_NAME, chatId),
+      { message, editedAt: serverTimestamp() },
+      { merge: true },
+    );
   };
 
   // delete chat message

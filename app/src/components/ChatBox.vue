@@ -49,6 +49,7 @@ const handleDelete = () => {
         <div class="chatbox__name">{{ chat.senderUsername }}</div>
         <div class="chatbox__message">{{ chat.message }}</div>
       </div>
+      <span class="chatbox__edited-label" v-if="!!chat.editedAt">edited</span>
     </template>
   </div>
 </template>
@@ -61,9 +62,18 @@ const handleDelete = () => {
   }
 }
 
+.chatbox {
+  align-items: flex-end;
+}
+
 .chatbox.chatbox--me {
   text-align: right;
   justify-content: flex-end;
+}
+
+.chatbox__action-btn,
+.chatbox__edited-label {
+  font-size: 0.75rem;
 }
 
 .chatbox__action-btn {
@@ -74,7 +84,6 @@ const handleDelete = () => {
 
   align-self: flex-end;
   cursor: pointer;
-  font-size: 0.75rem;
   color: #555555;
   text-decoration: underline;
 }
