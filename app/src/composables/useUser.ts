@@ -4,8 +4,10 @@ import { FirebaseApp } from 'firebase/app';
 import {
   collection,
   doc,
+  FirestoreDataConverter,
   getDoc,
   getFirestore,
+  QueryDocumentSnapshot,
   setDoc,
 } from 'firebase/firestore';
 
@@ -15,6 +17,17 @@ type User = {
 
 const USER_ID_STORAGE_KEY = 'firestore-study-user-id';
 const USER_COLLECTION_NAME = 'users';
+
+// define converter to make typescript work
+const userConverter: FirestoreDataConverter<User, User> = {
+  toFirestore: (user: User) => user,
+  fromFirestore: (snapshot: QueryDocumentSnapshot) => {
+    const user: User = {
+      username: snapshot.data().username,
+    };
+    return user;
+  },
+};
 
 export const useUser = async () => {
   // firestore初期化
@@ -27,16 +40,18 @@ export const useUser = async () => {
     doc(collection(db, USER_COLLECTION_NAME)).id;
   const username = ref<User['username']>();
 
-  // TODO: hookを外す
   const docSnap = await getDoc(doc(db, USER_COLLECTION_NAME, userId));
-  username.value = docSnap.exists() ? docSnap.data().name : '';
+  username.value = docSnap.exists() ? docSnap.data().username : '';
 
   // ユーザー名を保存
   const handleNameSubmission = async (inputtedName: string) => {
     username.value = inputtedName;
-    await setDoc(doc(db, USER_COLLECTION_NAME, userId), {
-      username: inputtedName,
-    });
+    await setDoc(
+      doc(db, USER_COLLECTION_NAME, userId).withConverter(userConverter),
+      {
+        username: inputtedName,
+      },
+    );
     localStorage.setItem(USER_ID_STORAGE_KEY, userId);
   };
 

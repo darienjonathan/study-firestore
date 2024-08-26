@@ -6,10 +6,12 @@ import {
   collection,
   deleteDoc,
   doc,
+  FirestoreDataConverter,
   getFirestore,
   onSnapshot,
   orderBy,
   query,
+  QueryDocumentSnapshot,
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
@@ -21,6 +23,22 @@ export type Chat = {
   senderUsername: string;
   message: string;
   createdAt: number;
+  editedAt?: number;
+};
+
+// define converter to make typescript work
+const chatConverter: FirestoreDataConverter<Chat, Chat> = {
+  toFirestore: (chat: Chat) => chat,
+  fromFirestore: (snapshot: QueryDocumentSnapshot) => {
+    const data = snapshot.data();
+    return {
+      senderId: data.senderId,
+      senderUsername: data.senderUsername,
+      message: data.message,
+      createdAt: data.createdAt,
+      editedAt: data.editedAt,
+    };
+  },
 };
 
 export const useChats = async () => {
@@ -39,7 +57,7 @@ export const useChats = async () => {
   const q = query(
     collection(db, CHAT_COLLECTION_NAME),
     orderBy('createdAt', 'asc'),
-  );
+  ).withConverter(chatConverter);
 
   // fetch and subscribe to changes in chat messages
   const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -59,19 +77,24 @@ export const useChats = async () => {
     senderId: string,
     senderUsername: string,
   ) => {
-    await addDoc(collection(db, CHAT_COLLECTION_NAME), {
-      senderId,
-      senderUsername,
-      message: newChatMessage.value,
-      createdAt: serverTimestamp(),
-    });
+    if (!newChatMessage.value) return;
+
+    await addDoc(
+      collection(db, CHAT_COLLECTION_NAME).withConverter(chatConverter),
+      {
+        senderId,
+        senderUsername,
+        message: newChatMessage.value,
+        createdAt: serverTimestamp(),
+      },
+    );
     newChatMessage.value = '';
   };
 
   // edit chat message
   const editChatMessage = (chatId: string, message: string) => {
     setDoc(
-      doc(db, CHAT_COLLECTION_NAME, chatId),
+      doc(db, CHAT_COLLECTION_NAME, chatId).withConverter(chatConverter),
       { message, editedAt: serverTimestamp() },
       { merge: true },
     );
