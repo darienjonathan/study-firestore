@@ -30,20 +30,21 @@ const userConverter: FirestoreDataConverter<User, User> = {
 };
 
 export const useUser = async () => {
-  // firestore初期化
+  // firestore initialization
   const firebaseApp = inject<FirebaseApp>(firebaseAppKey)!; // TODO: !を削除
   const db = getFirestore(firebaseApp);
 
-  // ユーザー名
+  // username
+  const username = ref<User['username']>();
+
+  // fetch username
   const userId =
     localStorage.getItem(USER_ID_STORAGE_KEY) ||
     doc(collection(db, USER_COLLECTION_NAME)).id;
-  const username = ref<User['username']>();
-
   const docSnap = await getDoc(doc(db, USER_COLLECTION_NAME, userId));
   username.value = docSnap.exists() ? docSnap.data().username : '';
 
-  // ユーザー名を保存
+  // save username
   const handleNameSubmission = async (inputtedName: string) => {
     username.value = inputtedName;
     await setDoc(
